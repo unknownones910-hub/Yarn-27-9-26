@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Yarn photo coming soon">
+  <rect width="400" height="500" fill="#F5EEE4"/>
+  <g transform="translate(200 250)" fill="none" stroke="#D8C3A9" stroke-width="3" stroke-linecap="round">
+    <circle r="72"/>
+    <path d="M-52 -49c21 15 39 39 47 66M-25 -67c26 19 46 51 55 87M23 -68c17 18 30 43 37 69M-68 -14c14 12 27 28 34 46"/>
+  </g>
+  <text x="200" y="380" text-anchor="middle" fill="#A99781"
+        font-family="Georgia, serif" font-size="15" letter-spacing="0.08em">Photo coming soon</text>
+</svg>
