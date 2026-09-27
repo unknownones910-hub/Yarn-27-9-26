@@ -1,0 +1,34 @@
+User-agent: *
+
+# Nothing here is useful to a search engine, and crawling it wastes budget.
+Disallow: /admin/
+Disallow: /account/
+Disallow: /cart.php
+Disallow: /checkout.php
+Disallow: /pay.php
+Disallow: /order-success/
+Disallow: /invoice.php
+Disallow: /login.php
+Disallow: /verify.php
+Disallow: /logout.php
+Disallow: /track-order.php
+Disallow: /search.php
+Disallow: /webhooks/
+Disallow: /install.php
+Disallow: /_styleguide.php
+
+# Filtered shop URLs are near-duplicates of the clean category pages.
+Disallow: /*?*craft=
+Disallow: /*?*fiber=
+Disallow: /*?*weight=
+Disallow: /*?*color=
+Disallow: /*?*price_min=
+Disallow: /*?*price_max=
+Disallow: /*?*in_stock=
+Disallow: /*?*on_sale=
+Disallow: /*?*rated=
+Disallow: /*?*page=
+
+Allow: /
+
+Sitemap: https://yarnnest.site.je/sitemap.xml

@@ -1,0 +1,158 @@
+# =====================================================================
+#  The Yarn Nest — Apache configuration
+#  Works on XAMPP and on cPanel shared hosting.
+# =====================================================================
+
+Options -Indexes
+DirectoryIndex index.php index.html
+
+# ---------------------------------------------------------------------
+#  Error pages
+# ---------------------------------------------------------------------
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+ErrorDocument 403 /404.php
+
+# ---------------------------------------------------------------------
+#  Never serve secrets, SQL, docs or dotfiles
+# ---------------------------------------------------------------------
+<FilesMatch "\.(local\.php|sql|md|log|json|lock|ini|bak|dist)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+RedirectMatch 404 ^/(sql|cron|tools)/.*$
+
+# The full-resolution background original. Only tools/build-bg-plates.php reads
+# it; the site serves the two ~40KB plates it generates. It is ~29MB, so a
+# stray link to it would be a very expensive mistake.
+RedirectMatch 404 ^/assets/img/_bg-source\..*$
+
+# ---------------------------------------------------------------------
+#  Clean URLs
+# ---------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Force HTTPS in production (skipped on localhost).
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+    # Drop a trailing slash (except on real directories).
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.+)/$ /$1 [R=301,L]
+
+    # WebP is missing from many shared-host MIME maps. /uploads also sends
+    # X-Content-Type-Options: nosniff, so a wrong type blanks every image.
+    # dir= and file= stay separate so the path slash is never in the query string.
+    RewriteRule ^uploads/([a-z][a-z0-9_-]*)/([A-Za-z0-9_.-]+\.webp)$ serve-upload.php?dir=$1&file=$2 [L,NC]
+
+    # Existing files and directories win.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Catalog
+    RewriteRule ^category/([a-z0-9-]+)$    shop.php?category=$1       [QSA,L]
+    RewriteRule ^product/([a-z0-9-]+)$     product.php?slug=$1        [QSA,L]
+    RewriteRule ^collection/([a-z0-9-]+)$  collection.php?slug=$1     [QSA,L]
+
+    # Content
+    RewriteRule ^blog/([a-z0-9-]+)$        blog-post.php?slug=$1      [QSA,L]
+    RewriteRule ^pattern/([a-z0-9-]+)$     pattern.php?slug=$1        [QSA,L]
+
+    # Orders
+    RewriteRule ^order-success/([A-Za-z0-9-]+)$ order-success.php?order=$1 [QSA,L]
+
+    # Sitemap
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+    # Policy pages -> the CMS-backed renderer
+    RewriteRule ^(privacy-policy|terms-and-conditions|shipping-policy|returns-and-refunds|cancellation-policy|cookie-policy|disclaimer|grievance-redressal)$ policy.php?p=$1 [QSA,L]
+
+    # Anything else that looks like a page falls through to the 404 handler.
+</IfModule>
+
+# ---------------------------------------------------------------------
+#  Compression
+# ---------------------------------------------------------------------
+# AddOutputFilterByType is provided by mod_filter, not mod_deflate — both must
+# be loaded, hence the nested guard. A bare mod_deflate check gives a 500 on
+# hosts (including stock XAMPP) where mod_filter is off.
+#
+# But guarding alone is not enough: where mod_filter is absent the block is
+# skipped and the site ships COMPLETELY UNCOMPRESSED, with nothing to warn you.
+# Stock XAMPP has mod_filter commented out, so that is the default local state.
+# The fallback below uses SetOutputFilter, which is core + mod_deflate only.
+<IfModule mod_deflate.c>
+    <IfModule mod_filter.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+        AddOutputFilterByType DEFLATE application/javascript application/json
+        AddOutputFilterByType DEFLATE application/xml image/svg+xml
+    </IfModule>
+
+    <IfModule !mod_filter.c>
+        # Matched against the resolved filename, so rewritten URLs like
+        # /privacy-policy still match policy.php and get compressed.
+        <FilesMatch "\.(php|html?|css|js|json|xml|svg|txt)$">
+            SetOutputFilter DEFLATE
+        </FilesMatch>
+    </IfModule>
+</IfModule>
+
+# ---------------------------------------------------------------------
+#  Caching.  Assets are versioned with ?v=N, so they can cache hard.
+# ---------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault                      "access plus 1 hour"
+    ExpiresByType text/css              "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/jpeg            "access plus 6 months"
+    ExpiresByType image/png             "access plus 6 months"
+    ExpiresByType image/webp            "access plus 6 months"
+    ExpiresByType image/avif            "access plus 6 months"
+    ExpiresByType image/svg+xml         "access plus 6 months"
+    ExpiresByType font/woff2            "access plus 1 year"
+    ExpiresByType text/html             "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|woff2|jpg|jpeg|png|webp|avif|svg)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ---------------------------------------------------------------------
+#  MIME types some shared hosts still miss
+# ---------------------------------------------------------------------
+<IfModule mod_mime.c>
+    AddType image/webp   .webp
+    AddType image/avif   .avif
+    AddType font/woff2   .woff2
+</IfModule>
+
+# ---------------------------------------------------------------------
+#  Upload ceiling (raise on the host if larger product photos are needed)
+# ---------------------------------------------------------------------
+<IfModule mod_php.c>
+    php_value upload_max_filesize 8M
+    php_value post_max_size 12M
+</IfModule>

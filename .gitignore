@@ -1,0 +1,19 @@
+# Secrets — recreated by hand on each environment. NEVER commit these.
+# Broad on purpose: `*.local.*` also catches db-config.local.example.php, which
+# is meant to be a blank template but is exactly the file someone fills in with
+# a real password and then commits.
+config/*-config.local.php
+config/*.local.*.php
+
+# Uploaded media and generated derivatives
+uploads/*
+!uploads/.htaccess
+!uploads/index.html
+
+# Composer
+/vendor/
+
+# Local noise
+*.log
+.DS_Store
+Thumbs.db
